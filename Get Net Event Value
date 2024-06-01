@@ -1,0 +1,53 @@
+#include "pch.h"
+#include <windows.h>
+#include <fwpmu.h>
+#include <stdio.h>
+
+#pragma comment(lib, "Fwpuclnt.lib")
+
+int main() {
+    HANDLE engineHandle = NULL;
+    DWORD result;
+    FWP_VALUE0* currentValue = NULL;
+
+    // Open a session to the filter engine
+    result = FwpmEngineOpen0(
+        NULL,                // The server name, NULL for local
+        RPC_C_AUTHN_DEFAULT, // Default authentication
+        NULL,                // Default authentication service
+        NULL,                // Session parameters
+        &engineHandle        // Pointer to handle
+    );
+
+    if (result != ERROR_SUCCESS) {
+        printf("FwpmEngineOpen0 failed with error: %lu\n", result);
+        return 1;
+    }
+
+    // Get the current value of the engine option
+    FWPM_ENGINE_OPTION option = FWPM_ENGINE_COLLECT_NET_EVENTS;
+
+    result = FwpmEngineGetOption0(engineHandle, option, &currentValue);
+
+    if (result != ERROR_SUCCESS) {
+        printf("FwpmEngineGetOption0 failed with error: %lu\n", result);
+        FwpmEngineClose0(engineHandle);
+        return 1;
+    }
+
+    if (currentValue->type == FWP_UINT32) {
+        printf("Current value of FWPM_ENGINE_COLLECT_NET_EVENTS: %u\n", currentValue->uint32);
+    }
+    else {
+        printf("Unexpected value type\n");
+    }
+
+    // Free the memory allocated for the value
+    FwpmFreeMemory0((void**)&currentValue);
+
+    // Close the session to the filter engine
+    FwpmEngineClose0(engineHandle);
+
+    return 0;
+
+
