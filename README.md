@@ -16,3 +16,6 @@ Link Against the Library:
 Right-click your project in the Solution Explorer and select "Properties".
 Go to Configuration Properties -> Linker -> Input.
 In the "Additional Dependencies" field, add Fwpuclnt.lib. Ensure it looks something like this: Fwpuclnt.lib;%(AdditionalDependencies).
+
+Then Hit run in Visual studio and a command prompt will open with succed/error in Disable net Events 
+Get Net event Value prints current value in the console
