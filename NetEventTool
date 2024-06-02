@@ -1,0 +1,104 @@
+#include "pch.h"
+#include <windows.h>
+#include <fwpmu.h>
+#include <stdio.h>
+
+#pragma comment(lib, "Fwpuclnt.lib")
+
+void checkCurrentValue(HANDLE engineHandle) {
+    DWORD result;
+    FWP_VALUE0* currentValue = NULL;
+    FWPM_ENGINE_OPTION option = FWPM_ENGINE_COLLECT_NET_EVENTS;
+
+    result = FwpmEngineGetOption0(engineHandle, option, &currentValue);
+
+    if (result != ERROR_SUCCESS) {
+        printf("FwpmEngineGetOption0 failed with error: %lu\n", result);
+        return;
+    }
+
+    if (currentValue->type == FWP_UINT32) {
+        printf("Current value of FWPM_ENGINE_COLLECT_NET_EVENTS: %u\n", currentValue->uint32);
+    }
+    else {
+        printf("Unexpected value type\n");
+    }
+
+    // Free the memory allocated for the value
+    FwpmFreeMemory0((void**)&currentValue);
+}
+
+void setOption(HANDLE engineHandle, UINT32 value) {
+    DWORD result;
+    FWPM_ENGINE_OPTION option = FWPM_ENGINE_COLLECT_NET_EVENTS;
+    FWP_VALUE0 newValue;
+    newValue.type = FWP_UINT32;
+    newValue.uint32 = value;
+
+    result = FwpmEngineSetOption0(engineHandle, option, &newValue);
+
+    if (result != ERROR_SUCCESS) {
+        printf("FwpmEngineSetOption0 failed with error: %lu\n", result);
+    }
+    else {
+        printf("FwpmEngineSetOption0 succeeded\n");
+    }
+}
+
+int main() {
+    HANDLE engineHandle = NULL;
+    DWORD result;
+
+    // Open a session to the filter engine
+    result = FwpmEngineOpen0(
+        NULL,                // The server name, NULL for local
+        RPC_C_AUTHN_DEFAULT, // Default authentication
+        NULL,                // Default authentication service
+        NULL,                // Session parameters
+        &engineHandle        // Pointer to handle
+    );
+
+    if (result != ERROR_SUCCESS) {
+        printf("FwpmEngineOpen0 failed with error: %lu\n", result);
+        return 1;
+    }
+
+    int choice;
+    do {
+        printf("\nMenu:\n");
+        printf("1. Check current value of FWPM_ENGINE_COLLECT_NET_EVENTS\n");
+        printf("2. Enable FWPM_ENGINE_COLLECT_NET_EVENTS\n");
+        printf("3. Disable FWPM_ENGINE_COLLECT_NET_EVENTS\n");
+        printf("4. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+        case 1:
+            checkCurrentValue(engineHandle);
+            break;
+        case 2:
+            setOption(engineHandle, 1);  // Enable
+            break;
+        case 3:
+            setOption(engineHandle, 0);  // Disable
+            break;
+        case 4:
+            printf("Exiting...\n");
+            break;
+        default:
+            printf("Invalid choice. Please try again.\n");
+            break;
+        }
+    } while (choice != 4);
+
+    // Close the session to the filter engine
+    FwpmEngineClose0(engineHandle);
+
+    // Confirmation message
+    printf("Operation completed. Press any key to exit...\n");
+    getchar();  // Wait for user input before closing the console
+    getchar();  // Additional getchar() to account for previous newline
+
+    return 0;
+}
